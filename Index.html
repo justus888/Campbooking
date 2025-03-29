@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Campground Booking</title>
+    <!-- Litepicker CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/litepicker/dist/css/litepicker.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 10px;
+            padding: 0;
+        }
+        h1, h2 {
+            text-align: center;
+        }
+        .site {
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin: 5px;
+            max-width: 90%;
+            background-color: #f9f9f9;
+        }
+        button {
+            padding: 5px 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            width: 100%;
+            margin-top: 5px;
+        }
+        button:disabled {
+            background-color: #ccc;
+        }
+        form {
+            max-width: 90%;
+            margin: 10px auto;
+        }
+        label {
+            display: block;
+            margin: 5px 0;
+        }
+        input, select {
+            width: 100%;
+            padding: 5px;
+            box-sizing: border-box;
+        }
+        .logo {
+            display: block;
+            margin: 0 auto;
+            max-width: 150px;
+            height: auto;
+        }
+    </style>
+</head>
+<body>
+    <img src="YOUR_LOGO_URL_HERE" alt="Campground Logo" class="logo">
+    <h1>My Campground</h1>
+
+    <h2>Available Sites</h2>
+    <div id="siteList"></div>
+
+    <h2>Book a Site</h2>
+    <form id="bookingForm">
+        <label>Site Name: <input type="text" id="siteName" required></label>
+        <label>Your Name: <input type="text" id="userName" required></label>
+        <label>Dates: <input type="text" id="dateRange" placeholder="Select dates" required></label>
+        <label>Payment Method:
+            <select id="paymentMethod" required>
+                <option value="">Select Payment</option>
+                <option value="GCash">GCash</option>
+                <option value="PayPal">PayPal</option>
+                <option value="Bank Transfer">Bank Transfer</option>
+            </select>
+        </label>
+        <button type="submit">Book Now</button>
+    </form>
+
+    <!-- Litepicker JS -->
+    <script src="https://cdn.jsdelivr.net/npm/litepicker/dist/litepicker.js"></script>
+    <script>
+        let campsites = [
+            { name: "Site A", price: 1000, status: "Available" },
+            { name: "Site B", price: 1250, status: "Available" },
+            { name: "Site C", price: 750, status: "Available" }
+        ];
+        let bookings = JSON.parse(localStorage.getItem('bookings')) || [];
+
+        // Litepicker Setup
+        const picker = new Litepicker({
+            element: document.getElementById('dateRange'),
+            singleMode: false,
+            numberOfMonths: 2,
+            numberOfColumns: 2,
+            format: 'MM/DD/YYYY',
+            minDate: new Date(),
+            setup: (picker) => {
+                picker.on('selected', (start, end) => {
+                    document.getElementById('dateRange').value = `${start.dateInstance.toLocaleDateString('en-US')} - ${end.dateInstance.toLocaleDateString('en-US')}`;
+                });
+            }
+        });
+
+        function displaySites() {
+            const siteList = document.getElementById("siteList");
+            siteList.innerHTML = "";
+            campsites.forEach(site => {
+                const isBooked = bookings.some(b => b.siteName === site.name);
+                site.status = isBooked ? "Booked" : "Available";
+                const div = document.createElement("div");
+                div.className = "site";
+                div.innerHTML = `${site.name} - ₱${site.price}/night - ${site.status}
+                    <button onclick="bookSite('${site.name}')" ${site.status === "Booked" ? "disabled" : ""}>Book</button>`;
+                siteList.appendChild(div);
+            });
+        }
+
+        function bookSite(siteName) {
+            document.getElementById("siteName").value = siteName;
+        }
+
+        document.getElementById("bookingForm").addEventListener("submit", function(event) {
+            event.preventDefault();
+            const siteName = document.getElementById("siteName").value;
+            const userName = document.getElementById("userName").value;
+            const dates = document.getElementById("dateRange").value;
+            const paymentMethod = document.getElementById("paymentMethod").value;
+
+            const site = campsites.find(s => s.name === siteName);
+            if (site && site.status === "Available") {
+                site.status = "Booked";
+                bookings.push({ siteName, userName, dates, paymentMethod });
+                localStorage.setItem('bookings', JSON.stringify(bookings));
+                displaySites();
+                this.reset();
+                alert("Booking confirmed! Payment details will be sent separately.");
+            } else {
+                alert("Sorry, that site isn’t available!");
+            }
+        });
+
+        displaySites();
+    </script>
+</body>
